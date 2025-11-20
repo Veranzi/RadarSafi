@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
-import 'about_screen.dart';
-import 'quiz_screen.dart';
+import '../root/root_shell.dart';
 
-class PlayLearnScreen extends StatelessWidget {
-  const PlayLearnScreen({super.key});
+class QuizResultsScreen extends StatelessWidget {
+  const QuizResultsScreen({
+    super.key,
+    required this.score,
+    required this.totalQuestions,
+  });
+
+  final int score;
+  final int totalQuestions;
 
   @override
   Widget build(BuildContext context) {
+    final percentage = (score / totalQuestions) * 100;
+    final passed = percentage >= 60; // 60% to pass
+
     return Scaffold(
       backgroundColor: AppColors.backgroundDeep,
       body: SizedBox(
@@ -26,47 +35,72 @@ class PlayLearnScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Spacer(),
-                  // Game Controller Icon
+                  // Confetti Icon
                   const Icon(
-                    Icons.sports_esports_outlined,
-                    size: 80,
-                    color: AppColors.textPrimary,
+                    Icons.celebration,
+                    size: 100,
+                    color: Color(0xFFFFD700), // Gold color
                   ),
                   const SizedBox(height: 32),
-                  // Title
-                  const Text(
-                    'Play & Learn',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
+                  // Pass/Fail Message
+                  Text(
+                    passed ? 'You passed the test.' : 'Test completed.',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                       fontFamily: 'Poppins',
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
-                  // Subtitle
-                  const Text(
-                    'Play Now and Level up',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textPrimary,
-                      fontFamily: 'Poppins',
+                  const SizedBox(height: 48),
+                  // Score Circle
+                  Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF9500), // Orange
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.textPrimary,
+                        width: 4,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'You Scored',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textPrimary,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '$score/$totalQuestions',
+                          style: const TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  // Play Now Button
+                  const SizedBox(height: 48),
+                  // Try Again Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const QuizScreen(),
-                          ),
-                        );
+                        // Navigate back to Play & Learn screen (pop twice: results -> quiz -> play & learn)
+                        Navigator.of(context).popUntil((route) => route.isFirst);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.surface,
@@ -78,7 +112,7 @@ class PlayLearnScreen extends StatelessWidget {
                         ),
                       ),
                       child: const Text(
-                        'Play Now',
+                        'Try Again',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -88,15 +122,15 @@ class PlayLearnScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // About Button
+                  // Return to Home Button
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const AboutScreen(),
-                          ),
+                        // Navigate to RootShell (Home)
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const RootShell()),
+                          (route) => false,
                         );
                       },
                       style: OutlinedButton.styleFrom(
@@ -111,7 +145,7 @@ class PlayLearnScreen extends StatelessWidget {
                         ),
                       ),
                       child: const Text(
-                        'About',
+                        'Return to Home',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -120,7 +154,6 @@ class PlayLearnScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
                 ],
               ),
             ),

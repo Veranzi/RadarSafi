@@ -4,3 +4,4 @@ import 'package:radarsafi/src/app.dart';
 void main() {
   runApp(const RadarSafiApp());
 }
+

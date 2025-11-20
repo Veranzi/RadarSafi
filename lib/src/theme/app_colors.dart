@@ -20,3 +20,4 @@ class AppColors {
   static const Color textSecondary = Color(0xFFA3BCC2);
   static const Color outline = Color(0xFF154148);
 }
+

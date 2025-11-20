@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
-import '../../widgets/radar_background.dart';
-import '../../widgets/radar_button.dart';
+import '../../widgets/radar_logo.dart';
 import '../../widgets/radar_text_field.dart';
 import '../root/root_shell.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,90 +26,210 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const RootShell()),
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: RadarBackground(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text('Welcome back', style: AppTextStyles.title),
-              const SizedBox(height: 4),
-              Text('Enter your email and password', style: AppTextStyles.body),
-              const SizedBox(height: 32),
-              RadarTextField(
-                label: 'Email Address',
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                hintText: 'name@email.com',
-              ),
-              const SizedBox(height: 16),
-              RadarTextField(
-                label: 'Password',
-                controller: passwordController,
-                obscureText: true,
-                hintText: 'Create a strong password',
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: RadarGhostButton(
-                  label: 'Forgot Password?',
-                  onPressed: () {},
-                ),
-              ),
-              const SizedBox(height: 16),
-              RadarPrimaryButton(label: 'Log In', onPressed: _handleLogin),
-              const SizedBox(height: 18),
-              Center(
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  ),
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'New to RadarSafi? ',
-                      style: AppTextStyles.body,
-                      children: [
-                        TextSpan(
-                          text: 'Create Account',
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.accentGreen,
-                            fontWeight: FontWeight.w600,
-                          ),
+      backgroundColor: AppColors.backgroundDeep,
+      body: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.backgroundMid, AppColors.backgroundDeep],
+            ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+                  // Logo and Brand Name
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const RadarLogo(size: 50),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'RadarSafi',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          fontFamily: 'Poppins',
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 48),
+                  // Welcome Message
+                  const Text('Welcome back', style: AppTextStyles.title),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Enter your email and password',
+                    style: AppTextStyles.body,
+                  ),
+                  const SizedBox(height: 32),
+                  // Email Field
+                  RadarTextField(
+                    label: 'Email Address',
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  // Password Field
+                  RadarTextField(
+                    label: 'Password',
+                    controller: passwordController,
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 8),
+                  // Forgot Password Link
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: AppColors.accentGreen,
+                          fontSize: 14,
+                          decoration: TextDecoration.underline,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 48),
+                  // Log In Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const RootShell(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.backgroundDeep,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Log In',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Don't have account link
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
+                      );
+                    },
+                    child: Text.rich(
+                      TextSpan(
+                        text: "Don't have account? ",
+                        style: AppTextStyles.body,
+                        children: [
+                          TextSpan(
+                            text: 'Create Account',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.accentGreen,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Terms and Privacy Policy
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text.rich(
+                      TextSpan(
+                        text: 'By continuing you agree to the chat GPT ',
+                        style: AppTextStyles.caption,
+                        children: [
+                          WidgetSpan(
+                            child: GestureDetector(
+                              onTap: () {
+                                // Handle Terms of Service tap
+                              },
+                              child: const Text(
+                                'Term of Service',
+                                style: TextStyle(
+                                  color: AppColors.accentGreen,
+                                  fontSize: 13,
+                                  decoration: TextDecoration.underline,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ),
+                          ),
+                          const TextSpan(text: ' and '),
+                          WidgetSpan(
+                            child: GestureDetector(
+                              onTap: () {
+                                // Handle Privacy Policy tap
+                              },
+                              child: const Text(
+                                'Privacy Policy',
+                                style: TextStyle(
+                                  color: AppColors.accentGreen,
+                                  fontSize: 13,
+                                  decoration: TextDecoration.underline,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                'By continuing you agree to the RadarSafi Terms of Service and Privacy Policy.',
-                style: AppTextStyles.caption,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+

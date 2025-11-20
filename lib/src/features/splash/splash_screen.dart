@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
-import '../../widgets/radar_background.dart';
-import '../../widgets/radar_button.dart';
 import '../../widgets/radar_logo.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
@@ -13,47 +12,136 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: RadarBackground(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Spacer(flex: 2),
-            Column(
+      backgroundColor: AppColors.backgroundDeep,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.backgroundMid, AppColors.backgroundDeep],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const RadarLogo(size: 170),
-                const SizedBox(height: 24),
-                Text('RadarSafi', style: AppTextStyles.display),
-                const SizedBox(height: 8),
-                Text(
-                  'Verify before you click\nSecurity starts with you.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body,
+                const Spacer(flex: 2),
+                // Logo and Brand Name
+                Column(
+                  children: [
+                    const RadarLogo(size: 120),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'RadarSafi',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                // Tagline
+                Column(
+                  children: [
+                    const Text(
+                      'Verify before you click',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Poppins',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '...because "Security starts with me."',
+                      style: AppTextStyles.body,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                const Spacer(flex: 2),
+                // Action Buttons
+                Column(
+                  children: [
+                    // Log In Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.backgroundDeep,
+                          foregroundColor: AppColors.textPrimary,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Log In',
+                          style: AppTextStyles.button,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Create Account Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.backgroundDeep,
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(
+                            color: AppColors.backgroundDeep,
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.backgroundDeep,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
                 ),
               ],
             ),
-            const Spacer(),
-            Column(
-              children: [
-                RadarPrimaryButton(
-                  label: 'Log In',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                RadarSecondaryButton(
-                  label: 'Create Account',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  ),
-                ),
-                const SizedBox(height: 32),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
