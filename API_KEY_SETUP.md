@@ -1,25 +1,18 @@
 # Google Gemini API Key Setup Guide
 
-## ✅ Current Working API Key
-
-**API Key:** `AIzaSy************************` (⚠️ **DO NOT USE THIS EXAMPLE - GET YOUR OWN KEY**)
-
-**Status:** ⚠️ **You must get your own API key from Google Cloud Console**
-
-**Model Version:** `gemini-2.0-flash-001` (v1beta API)
-
----
-
 ## 📋 How to Use the API Key
 
 ### Step 1: Get Your API Key
+
+⚠️ **IMPORTANT:** You must get your own API key from Google Cloud Console. Never use someone else's API key or commit your key to version control.
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
 3. Enable the **Generative Language API**
 4. Go to **APIs & Services** → **Credentials**
 5. Click **Create Credentials** → **API Key**
-6. Copy your API key
+6. Copy your API key (it will look like: `AIzaSy...` followed by alphanumeric characters)
+7. **IMPORTANT:** Never share this key or commit it to version control
 
 ### Step 2: Create `.env` File
 
