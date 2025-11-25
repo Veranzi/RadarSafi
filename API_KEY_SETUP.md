@@ -2,9 +2,9 @@
 
 ## ✅ Current Working API Key
 
-**API Key:** `AIzaSyCXDqKN6ynL4ipCodtGyeCLdEXgDR3Gc14`
+**API Key:** `AIzaSy************************` (⚠️ **DO NOT USE THIS EXAMPLE - GET YOUR OWN KEY**)
 
-**Status:** ✅ Working and tested
+**Status:** ⚠️ **You must get your own API key from Google Cloud Console**
 
 **Model Version:** `gemini-2.0-flash-001` (v1beta API)
 
@@ -12,14 +12,25 @@
 
 ## 📋 How to Use the API Key
 
-### Step 1: Create `.env` File
+### Step 1: Get Your API Key
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the **Generative Language API**
+4. Go to **APIs & Services** → **Credentials**
+5. Click **Create Credentials** → **API Key**
+6. Copy your API key
+
+### Step 2: Create `.env` File
 
 Create a `.env` file in the **root directory** of your project (same level as `pubspec.yaml`):
 
 ```env
 # Google API Configuration
-GOOGLE_API_KEY=AIzaSyCXDqKN6ynL4ipCodtGyeCLdEXgDR3Gc14
+GOOGLE_API_KEY=YOUR_API_KEY_HERE
 ```
+
+⚠️ **IMPORTANT:** Replace `YOUR_API_KEY_HERE` with your actual API key from Google Cloud Console
 
 ### Step 2: Verify File Location
 
@@ -117,10 +128,12 @@ headers: {
 ### Test in Terminal (PowerShell):
 
 ```powershell
-$headers = @{'Content-Type'='application/json'; 'x-goog-api-key'='AIzaSyCXDqKN6ynL4ipCodtGyeCLdEXgDR3Gc14'}
+$headers = @{'Content-Type'='application/json'; 'x-goog-api-key'='YOUR_API_KEY_HERE'}
 $body = @{contents=@(@{parts=@(@{text='Hello, test'})})} | ConvertTo-Json -Depth 10
 Invoke-RestMethod -Uri 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent' -Method Post -Headers $headers -Body $body
 ```
+
+⚠️ **Replace `YOUR_API_KEY_HERE` with your actual API key**
 
 ### Expected Response:
 ```json
@@ -173,7 +186,7 @@ Invoke-RestMethod -Uri 'https://generativelanguage.googleapis.com/v1beta/models/
 
 ## 📝 Quick Reference
 
-**Working API Key:** `AIzaSyCXDqKN6ynL4ipCodtGyeCLdEXgDR3Gc14`
+**API Key:** Get your own from [Google Cloud Console](https://console.cloud.google.com/)
 
 **Model:** `gemini-2.0-flash-001`
 
