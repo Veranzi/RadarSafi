@@ -92,7 +92,7 @@ class SplashScreen extends StatelessWidget {
                     // Logo and Brand Name
                     Column(
                       children: [
-                        const RadarLogo(size: 120),
+                        const RadarLogo(size: 120, useCustomPaint: true),
                         const SizedBox(height: 24),
                         const Text(
                           'RadarSafi',

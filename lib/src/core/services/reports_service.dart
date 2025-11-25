@@ -29,6 +29,16 @@ class ReportsService {
       };
 
       await _firestore.collection('reports').add(report);
+    } on FirebaseException catch (e) {
+      // Provide more specific error messages
+      if (e.code == 'permission-denied') {
+        throw 'Permission denied. Please ensure Firestore security rules are configured. See FIRESTORE_SETUP.md for instructions.';
+      } else if (e.code == 'unavailable') {
+        throw 'Firestore is unavailable. Please check your internet connection.';
+      } else if (e.code == 'unauthenticated') {
+        throw 'You must be logged in to submit reports. Please log in and try again.';
+      }
+      throw 'Failed to save report: ${e.message ?? e.code}';
     } catch (e) {
       throw 'Failed to save report: ${e.toString()}';
     }

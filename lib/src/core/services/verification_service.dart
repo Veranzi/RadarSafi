@@ -23,7 +23,7 @@ class VerificationService {
   factory VerificationService() => _instance;
   VerificationService._internal();
 
-  /// Verify email/message content for scam indicators
+  /// Verify email/message content for scam indicators using LLM
   Future<VerificationResult> verifyEmailMessage({
     required String senderEmail,
     required String messageContent,
@@ -31,57 +31,65 @@ class VerificationService {
     try {
       ApiConfig.validate();
 
-      // Extract domain from sender email
-      final emailDomain = senderEmail.contains('@')
-          ? senderEmail.split('@')[1]
-          : senderEmail;
-
-      // Analyze message content for scam indicators
-      final scamIndicators = _analyzeScamIndicators(messageContent, emailDomain);
-
-      // Check domain reputation (using Google Safe Browsing API or custom logic)
-      final domainCheck = await _checkDomainReputation(emailDomain);
-
-      // Combine results
-      final isScam = (scamIndicators['isScam'] as bool? ?? false) ||
-          (domainCheck['isSuspicious'] as bool? ?? false);
-      final scamConfidence = scamIndicators['confidence'] as double? ?? 0.0;
-      final domainConfidence = domainCheck['confidence'] as double? ?? 0.0;
-      final confidence = (scamConfidence + domainConfidence) / 2;
-
-      // Generate agent response
-      final agentResponse = _generateAgentResponse(
-        isScam: isScam,
+      // Use LLM service for comprehensive analysis
+      final llmResult = await _llmService.analyzeEmailMessage(
         senderEmail: senderEmail,
-        indicators: scamIndicators,
-        domainInfo: domainCheck,
-        confidence: confidence,
+        messageContent: messageContent,
       );
 
-      // Get report count (simulated - in production, fetch from database)
-      final reportCount = isScam ? _getSimulatedReportCount() : 0;
+      final isScam = llmResult['isScam'] as bool;
+      final confidence = llmResult['confidence'] as double;
+      final indicators = llmResult['indicators'] as List<String>;
+      final company = llmResult['company'] as String?;
+      final analysis = llmResult['analysis'] as String;
+      final advice = llmResult['advice'] as String;
 
-      // Generate advice
-      final advice = isScam
-          ? _generateScamAdvice(scamIndicators, domainCheck)
-          : _generateSafeAdvice();
+      // Generate agent response
+      String agentResponse = 'RadarSafi Agent: ';
+      if (isScam) {
+        agentResponse += 'This message appears to be a SCAM. ';
+        agentResponse += 'Confidence level: ${(confidence * 100).toStringAsFixed(0)}%. ';
+        if (indicators.isNotEmpty) {
+          agentResponse += 'Detected indicators: ${indicators.take(3).join(", ")}. ';
+        }
+        agentResponse += analysis;
+      } else {
+        agentResponse += 'This message appears to be legitimate. ';
+        if (company != null) {
+          agentResponse += 'Detected company: $company. ';
+        }
+        agentResponse += analysis;
+      }
+
+      final reportCount = isScam ? _getSimulatedReportCount() : 0;
 
       return VerificationResult(
         isScam: isScam,
         agentResponse: agentResponse,
         reportCount: reportCount,
-        advice: advice,
+        advice: advice.isNotEmpty ? advice : _generateScamAdvice({}, {}),
         confidence: confidence,
       );
     } catch (e) {
-      // Fallback response on error
+      // Fallback: Use pattern-based analysis if LLM fails
+      final emailDomain = senderEmail.contains('@')
+          ? senderEmail.split('@')[1]
+          : senderEmail;
+      final scamIndicators = _analyzeScamIndicators(messageContent, emailDomain);
+      final domainCheck = await _checkDomainReputation(emailDomain);
+      final isScam = (scamIndicators['isScam'] as bool? ?? false) ||
+          (domainCheck['isSuspicious'] as bool? ?? false);
+      
       return VerificationResult(
-        isScam: false,
-        agentResponse:
-            'RadarSafi Agent: Unable to complete verification at this time. Please exercise caution and verify the sender through official channels.',
-        reportCount: 0,
-        advice: 'If you are unsure about this message, contact the organization directly through their official website or phone number.',
-        confidence: 0.0,
+        isScam: isScam,
+        agentResponse: isScam
+            ? 'RadarSafi Agent: This message appears suspicious. Exercise caution and verify through official channels.'
+            : 'RadarSafi Agent: Unable to complete full verification. Please verify the sender through official channels.',
+        reportCount: isScam ? _getSimulatedReportCount() : 0,
+        advice: isScam
+            ? _generateScamAdvice(scamIndicators, domainCheck)
+            : 'If you are unsure about this message, contact the organization directly through their official website or phone number.',
+        confidence: 0.5,
       );
     }
   }
@@ -164,8 +172,10 @@ class VerificationService {
       detectedIndicators.add('Request for personal information');
     }
 
-    final isScam = scamScore >= 5;
-    final confidence = (scamScore / 15).clamp(0.0, 1.0);
+    // Lower threshold - be more aggressive (was >= 5, now >= 3)
+    final isScam = scamScore >= 3;
+    // Increase confidence calculation to be more sensitive
+    final confidence = (scamScore / 12).clamp(0.0, 1.0);
 
     return {
       'isScam': isScam,
@@ -175,13 +185,14 @@ class VerificationService {
     };
   }
 
-  /// Check domain reputation
+  /// Check domain reputation (more aggressive detection)
   Future<Map<String, dynamic>> _checkDomainReputation(String domain) async {
     try {
-      // In production, you would use Google Safe Browsing API or similar
-      // For now, we'll use a simple heuristic check
+      final domainLower = domain.toLowerCase();
+      int suspiciousScore = 0;
+      final List<String> indicators = [];
       
-      // Known legitimate domains (you can expand this list)
+      // Known legitimate domains
       final knownLegitimateDomains = [
         'gmail.com',
         'yahoo.com',
@@ -191,44 +202,87 @@ class VerificationService {
         'aol.com',
         'protonmail.com',
         'mail.com',
+        // Kenyan companies - official domains only
+        'safaricom.co.ke',
+        'kplc.co.ke',
+        'equitybank.co.ke',
+        'equitybankgroup.com',
+        'mpesa.safaricom.co.ke',
       ];
 
       // Check if domain is in known legitimate list
-      if (knownLegitimateDomains.contains(domain.toLowerCase())) {
+      if (knownLegitimateDomains.contains(domainLower)) {
         return {
           'isSuspicious': false,
-          'confidence': 0.2,
+          'confidence': 0.1,
           'reputation': 'Known legitimate domain',
+          'indicators': [],
         };
       }
 
-      // Check for suspicious domain patterns
-      bool isSuspicious = false;
-      double confidence = 0.5;
-
-      // Check for typosquatting patterns
-      if (domain.length < 5) {
-        isSuspicious = true;
-        confidence = 0.7;
+      // Check for typosquatting and suspicious patterns
+      final suspiciousPatterns = [
+        'safaricom-', 'safaricom.', 'safaric0m', 'safaricorn', 'safaricom-support', 'safaricom-help',
+        'kplc-', 'kplc.', 'kenya-power', 'kplc-support',
+        'equity-bank', 'equitybank-', 'equity-support',
+        'mpesa-', 'm-pesa-', 'mpesa.', 'mpesa-support',
+      ];
+      
+      for (final pattern in suspiciousPatterns) {
+        if (domainLower.contains(pattern)) {
+          suspiciousScore += 5;
+          indicators.add('Suspicious domain pattern: $pattern');
+        }
+      }
+      
+      // If domain contains company name but isn't in legitimate list, it's suspicious
+      if ((domainLower.contains('safaricom') || 
+           domainLower.contains('kplc') || 
+           domainLower.contains('equity') || 
+           domainLower.contains('mpesa')) &&
+          !knownLegitimateDomains.contains(domainLower)) {
+        suspiciousScore += 4;
+        indicators.add('Domain claims to be from company but doesn\'t match official domain');
       }
 
-      // Check for random character strings
+      // Check for suspicious URL shorteners
+      final urlShorteners = ['bit.ly', 'tinyurl', 'goo.gl', 't.co', 'ow.ly', 'is.gd', 'clck.ru', 'rebrand.ly'];
+      for (final shortener in urlShorteners) {
+        if (domainLower.contains(shortener)) {
+          suspiciousScore += 3;
+          indicators.add('URL shortener detected (often used in scams)');
+        }
+      }
+
+      // Check for random character strings (common in scam domains)
       final randomPattern = RegExp(r'^[a-z0-9]{10,}$');
-      if (randomPattern.hasMatch(domain.split('.')[0])) {
-        isSuspicious = true;
-        confidence = 0.6;
+      if (randomPattern.hasMatch(domainLower.split('.')[0])) {
+        suspiciousScore += 2;
+        indicators.add('Random character string (common in scam domains)');
       }
+      
+      // Check domain length (very short domains are suspicious)
+      if (domainLower.length < 5) {
+        suspiciousScore += 2;
+        indicators.add('Very short domain (suspicious)');
+      }
+
+      // Lower threshold - be more aggressive (was >= 5, now >= 3)
+      final isSuspicious = suspiciousScore >= 3;
+      final confidence = (suspiciousScore / 10).clamp(0.0, 1.0);
 
       return {
         'isSuspicious': isSuspicious,
         'confidence': confidence,
         'reputation': isSuspicious ? 'Suspicious domain pattern' : 'Unknown domain',
+        'indicators': indicators,
       };
     } catch (e) {
       return {
         'isSuspicious': false,
         'confidence': 0.5,
         'reputation': 'Unable to verify domain',
+        'indicators': [],
       };
     }
   }

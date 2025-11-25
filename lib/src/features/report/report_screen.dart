@@ -111,7 +111,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   // Logo and Brand Name
                   Row(
                     children: [
-                      const RadarLogo(size: 40),
+                      const RadarLogo(size: 40, useCustomPaint: true),
                       const SizedBox(width: 12),
                       const Text(
                         'RadarSafi',

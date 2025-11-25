@@ -139,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const RadarLogo(size: 50),
+                      const RadarLogo(size: 50, useCustomPaint: true),
                       const SizedBox(width: 12),
                       const Text(
                         'RadarSafi',

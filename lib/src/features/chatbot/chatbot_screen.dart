@@ -121,7 +121,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const RadarLogo(size: 40),
+                const RadarLogo(size: 40, useCustomPaint: true),
                 const SizedBox(width: 12),
                 const Text(
                   'RadarSafi',
@@ -142,27 +142,18 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Robot Image
-                        Container(
+                        // Robot Image (no background)
+                        SizedBox(
                           width: 200,
                           height: 200,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(100),
-                          ),
                           child: Image.asset(
-                            'assets/images/robot.jpeg',
+                            'assets/images/roboti.png',
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
-                                child: const Icon(
-                                  Icons.smart_toy,
-                                  size: 100,
-                                  color: AppColors.accentGreen,
-                                ),
+                              return const Icon(
+                                Icons.smart_toy,
+                                size: 100,
+                                color: AppColors.accentGreen,
                               );
                             },
                           ),

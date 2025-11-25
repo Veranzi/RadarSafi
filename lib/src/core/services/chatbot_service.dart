@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../config/company_knowledge.dart';
 
 class ChatbotService {
   static final ChatbotService _instance = ChatbotService._internal();
@@ -21,22 +22,49 @@ class ChatbotService {
       // Build conversation history for context
       final contents = <Map<String, dynamic>>[];
       
+      // Detect companies mentioned in user message
+      final mentionedCompanies = CompanyKnowledge.detectCompanies(userMessage);
+      String companyContext = '';
+      
+      if (mentionedCompanies.isNotEmpty) {
+        companyContext = '\n\nCOMPANY-SPECIFIC KNOWLEDGE:\n';
+        for (var company in mentionedCompanies) {
+          final info = CompanyKnowledge.getCompanyInfo(company);
+          if (info != null) {
+            companyContext += '\n$company:\n';
+            companyContext += 'Official Website: ${info['officialWebsite']}\n';
+            companyContext += 'Customer Care: ${info['customerCare']}\n';
+            companyContext += 'Common Scams: ${(info['commonScams'] as List).join(', ')}\n';
+            companyContext += 'Verification Tips: ${(info['verificationTips'] as List).join(' | ')}\n';
+          }
+        }
+      }
+
       // Add system instruction as first message
       contents.add({
         'role': 'user',
         'parts': [
           {
-            'text': 'You are RadarSafi Agent, a cybersecurity expert assistant. Your role is to help users with:\n'
-                '- Identifying and preventing scams, phishing, and fraud\n'
-                '- Verifying suspicious links, emails, messages, phone numbers, and images\n'
-                '- Providing cybersecurity best practices and advice\n'
-                '- Educating users about online safety\n'
-                '- Helping users understand security threats\n\n'
-                'IMPORTANT: Focus ONLY on cybersecurity topics. Be helpful, professional, and friendly. '
-                'Use simple language. Always prioritize user safety.\n\n'
-                'FORMATTING: Format your responses clearly without using markdown asterisks (*) or bold symbols. '
-                'Use bullet points (•) for lists, and use clear line breaks for readability. '
-                'Do not use ** for bold text - just write naturally.'
+            'text': 'You are RadarSafi Agent, a cybersecurity expert focused on Kenyan companies (Safaricom, KPLC, Equity Bank, M-Pesa).\n\n'
+                'YOUR ROLE:\n'
+                '• Verify suspicious messages, links, emails, and phone numbers\n'
+                '• Identify scams and phishing attempts\n'
+                '• Provide concise, actionable security advice\n'
+                '• Focus on Kenyan financial and utility services\n\n'
+                'RESPONSE GUIDELINES:\n'
+                '• Keep responses SHORT and CONCISE (2-4 sentences max)\n'
+                '• Use bullet points only when necessary\n'
+                '• Be direct and actionable\n'
+                '• Avoid long explanations - get to the point quickly\n'
+                '• If legitimate, say so briefly\n'
+                '• If suspicious, state the risk clearly and what to do\n\n'
+                'FORMATTING:\n'
+                '• No markdown asterisks (*) or bold symbols\n'
+                '• Use simple, clear language\n'
+                '• One main point per response\n'
+                '• Maximum 3-4 lines of text\n\n'
+                '${companyContext.isNotEmpty ? companyContext : ''}'
+                'Focus ONLY on cybersecurity. Be brief and helpful.'
           }
         ]
       });
@@ -66,10 +94,10 @@ class ChatbotService {
       final requestBody = {
         'contents': contents,
         'generationConfig': {
-          'temperature': 0.7,
-          'topK': 40,
-          'topP': 0.95,
-          'maxOutputTokens': 1024,
+          'temperature': 0.3, // Lower temperature for more focused, concise responses
+          'topK': 20, // Reduced for more focused output
+          'topP': 0.8, // Reduced for more deterministic responses
+          'maxOutputTokens': 256, // Reduced from 1024 to force shorter responses
         },
         'safetySettings': [
           {
@@ -162,43 +190,59 @@ class ChatbotService {
     }
   }
 
-  /// Filter response to ensure it's cybersecurity-related
+  /// Filter and shorten response to ensure it's concise and cybersecurity-related
   String _filterForCybersecurity(String response, String userMessage) {
-    // Check if response is already cybersecurity-related
+    // Make response more concise - remove unnecessary fluff
+    var cleanedResponse = response.trim();
+    
+    // Remove common verbose phrases (case insensitive)
+    final verbosePhrases = RegExp(
+      r'\b(I understand|Let me|I can help|I.m here to|Please note that|It.s important to|I would like to|I want to)\b',
+      caseSensitive: false,
+    );
+    cleanedResponse = cleanedResponse.replaceAll(verbosePhrases, '');
+    cleanedResponse = cleanedResponse.replaceAll(RegExp(r'\s+'), ' '); // Remove extra spaces
+    
+    // Split into sentences and keep only first 2-3 most relevant
+    final sentences = cleanedResponse.split(RegExp(r'[.!?]+')).where((s) => s.trim().isNotEmpty).toList();
+    
+    // Keep response short (max 2-3 sentences)
+    if (sentences.length > 3) {
+      cleanedResponse = sentences.take(3).join('. ').trim();
+      if (!cleanedResponse.endsWith('.') && !cleanedResponse.endsWith('!') && !cleanedResponse.endsWith('?')) {
+        cleanedResponse += '.';
+      }
+    }
+    
+    // Check if response is cybersecurity-related
     final securityKeywords = [
       'security', 'scam', 'phishing', 'fraud', 'cyber', 'hack', 'malware',
       'virus', 'password', 'authentication', 'verification', 'safe', 'unsafe',
       'legitimate', 'suspicious', 'threat', 'attack', 'vulnerability', 'privacy',
-      'data protection', 'online safety', 'identity theft', 'social engineering'
+      'data protection', 'online safety', 'identity theft', 'social engineering',
+      'safaricom', 'kplc', 'equity', 'mpesa', 'm-pesa'
     ];
 
-    final responseLower = response.toLowerCase();
+    final responseLower = cleanedResponse.toLowerCase();
     final userMessageLower = userMessage.toLowerCase();
 
-    // If response contains security keywords, return as is
+    // If response contains security keywords, return concise version
     if (securityKeywords.any((keyword) => responseLower.contains(keyword))) {
-      return response;
+      return cleanedResponse;
     }
 
-    // If user message is clearly not security-related, redirect
+    // If user message is clearly not security-related, redirect briefly
     final nonSecurityTopics = [
       'weather', 'recipe', 'sports', 'entertainment', 'movie', 'music',
       'game', 'joke', 'story', 'history', 'science', 'math'
     ];
 
     if (nonSecurityTopics.any((topic) => userMessageLower.contains(topic))) {
-      return 'I\'m RadarSafi Agent, focused on cybersecurity and online safety. '
-          'I can help you with:\n'
-          '• Identifying scams and phishing attempts\n'
-          '• Verifying suspicious links, emails, or messages\n'
-          '• Cybersecurity best practices\n'
-          '• Online safety advice\n\n'
-          'How can I help you stay safe online today?';
+      return 'I focus on cybersecurity and online safety. How can I help verify suspicious content?';
     }
 
-    // If response doesn't seem security-related, add context
-    return '$response\n\n[Note: As RadarSafi Agent, I focus on cybersecurity and online safety. '
-        'If you have questions about verifying suspicious content, I\'m here to help!]';
+    // Return concise response
+    return cleanedResponse;
   }
 
   /// Clean markdown formatting from response

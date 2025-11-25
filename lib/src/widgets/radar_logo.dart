@@ -5,15 +5,41 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
 class RadarLogo extends StatelessWidget {
-  const RadarLogo({super.key, this.size = 120});
+  const RadarLogo({
+    super.key,
+    this.size = 120,
+    this.useCustomPaint = false,
+  });
 
   final double size;
+  final bool useCustomPaint;
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.square(size),
-      painter: _RadarLogoPainter(),
+    if (useCustomPaint) {
+      // Use custom-drawn radar icon (for splash screen)
+      return CustomPaint(
+        size: Size.square(size),
+        painter: _RadarLogoPainter(),
+      );
+    }
+
+    // Use logo image (for other screens)
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.asset(
+        'assets/images/logo.jpeg',
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to a simple icon if image fails to load
+          return Icon(
+            Icons.radar,
+            size: size,
+            color: Colors.white,
+          );
+        },
+      ),
     );
   }
 }
@@ -28,7 +54,7 @@ class _RadarLogoPainter extends CustomPainter {
     final circlePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = AppColors.textPrimary.withOpacity(0.6);
+      ..color = AppColors.textPrimary.withValues(alpha: 0.6);
 
     // Outer circle
     canvas.drawCircle(center, radius - 8, circlePaint);
@@ -44,7 +70,7 @@ class _RadarLogoPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round
-      ..color = AppColors.textPrimary.withOpacity(0.8);
+      ..color = AppColors.textPrimary.withValues(alpha: 0.8);
 
     // -45 degrees in radians (pointing to top right)
     final sweepAngle = -45 * (math.pi / 180);

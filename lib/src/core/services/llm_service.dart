@@ -24,23 +24,44 @@ class LLMService {
       final mimeType = imageMimeType ?? 'image/jpeg';
 
       final prompt = '''
-Analyze this image and determine if it contains scam indicators. Check for:
-1. Suspicious text content (urgent requests, fake logos, phishing attempts)
-2. Fake company branding or logos
-3. Suspicious URLs or phone numbers visible in the image
-4. Common scam patterns (fake invoices, lottery wins, account suspension notices)
+You are a cybersecurity expert analyzing an image for SCAM and PHISHING indicators. Be AGGRESSIVE in detecting scams - err on the side of caution.
 
-Provide a JSON response with this structure:
+CRITICAL: Mark as SCAM if you detect ANY of these:
+- Urgent action requests (account suspension, verify now, etc.)
+- Requests for PIN, password, or personal information
+- Fake company logos or branding
+- Suspicious URLs or phone numbers
+- Lottery/prize win messages
+- Payment requests or wire transfers
+- Typosquatting domains (safaricom-xxx, kplc-xxx, etc.)
+- Poor grammar/spelling (common in scams)
+- Generic greetings ("Dear Customer" instead of name)
+- Threats or fear tactics
+
+For Kenyan companies, know:
+- Safaricom: Official domain is safaricom.co.ke, customer care is 100, NEVER asks for M-Pesa PIN
+- KPLC: Official domain is kplc.co.ke, customer care is 97771
+- Equity Bank: Official domain is equitybank.co.ke, customer care is 0763 000 000
+- M-Pesa: Part of Safaricom, NEVER asks for PIN
+
+Analyze this image thoroughly. Check for:
+1. Text content (urgent requests, fake logos, phishing language)
+2. Company branding (is it authentic or fake?)
+3. URLs visible (typosquatting, suspicious domains)
+4. Phone numbers (do they match official numbers?)
+5. Scam patterns (lottery wins, account suspension, etc.)
+
+Provide a JSON response:
 {
   "isScam": true/false,
   "confidence": 0.0-1.0,
-  "indicators": ["list of detected indicators"],
-  "company": "detected company name or null",
-  "analysis": "detailed analysis of the image",
-  "advice": "specific advice for the user"
+  "indicators": ["specific detected indicators"],
+  "company": "detected company or null",
+  "analysis": "detailed analysis explaining why it's scam or legitimate",
+  "advice": "specific actionable advice"
 }
 
-Be thorough and identify any red flags. If legitimate, state that clearly.
+IMPORTANT: If uncertain, mark as SCAM with lower confidence. Better safe than sorry.
 ''';
 
       final requestBody = {
@@ -98,26 +119,44 @@ Be thorough and identify any red flags. If legitimate, state that clearly.
       final apiKey = ApiConfig.googleApiKey!;
 
       final prompt = '''
-Analyze this URL/link and determine if it's a scam or legitimate. Check for:
-1. Domain reputation and legitimacy
-2. URL structure (typosquatting, suspicious patterns)
-3. Known scam patterns
-4. Whether it belongs to a legitimate company
+You are a cybersecurity expert analyzing a URL for SCAM and PHISHING. Be AGGRESSIVE - mark as SCAM if suspicious.
+
+CRITICAL SCAM INDICATORS:
+- URL shorteners (bit.ly, tinyurl.com, etc.) - often used in scams
+- Typosquatting: safaricom-xxx.com, kplc-xxx.com, safaric0m.com (0 instead of o)
+- Suspicious domains: safaricom-support.com, kplc-help.com, etc.
+- HTTP instead of HTTPS (legitimate sites use HTTPS)
+- Newly registered domains (< 1 year old)
+- Domains with random characters or numbers
+- Subdomains claiming to be official (support.safaricom-xxx.com)
+
+LEGITIMATE DOMAINS (Kenyan companies):
+- Safaricom: safaricom.co.ke, mpesa.safaricom.co.ke
+- KPLC: kplc.co.ke
+- Equity Bank: equitybank.co.ke, equitybankgroup.com
+- M-Pesa: mpesa.safaricom.co.ke
 
 URL to analyze: $url
 
-Provide a JSON response with this structure:
+Check:
+1. Domain legitimacy (matches official domains exactly?)
+2. URL structure (typosquatting, suspicious patterns?)
+3. HTTPS/SSL certificate
+4. Known scam patterns
+5. Domain age (if you can infer)
+
+Provide JSON response:
 {
   "isScam": true/false,
   "confidence": 0.0-1.0,
-  "indicators": ["list of detected indicators"],
-  "company": "detected company name or null",
+  "indicators": ["specific indicators found"],
+  "company": "detected company or null",
   "domain": "extracted domain",
-  "analysis": "detailed analysis of the URL",
-  "advice": "specific advice for the user"
+  "analysis": "detailed explanation",
+  "advice": "specific actionable advice"
 }
 
-Be thorough and identify any red flags. If legitimate, state the company it belongs to.
+IMPORTANT: If domain doesn't match official domains exactly, mark as SCAM. Better safe than sorry.
 ''';
 
       final requestBody = {
@@ -160,6 +199,96 @@ Be thorough and identify any red flags. If legitimate, state the company it belo
     }
   }
 
+  /// Analyze email/message content for scam indicators
+  Future<Map<String, dynamic>> analyzeEmailMessage({
+    required String senderEmail,
+    required String messageContent,
+  }) async {
+    try {
+      ApiConfig.validate();
+      final apiKey = ApiConfig.googleApiKey!;
+
+      final prompt = '''
+You are a cybersecurity expert analyzing an EMAIL/MESSAGE for SCAM and PHISHING. Be AGGRESSIVE - mark as SCAM if suspicious.
+
+CRITICAL SCAM INDICATORS:
+- Urgent action required / account suspension / verify now
+- Requests for PIN, password, credit card, personal info
+- Suspicious sender email (typosquatting, fake domains)
+- Generic greetings ("Dear Customer" instead of your name)
+- Poor grammar/spelling (common in scams)
+- Threats or fear tactics
+- Lottery/prize win messages
+- Payment requests or wire transfers
+- Suspicious links or attachments
+- Excessive urgency (act now, limited time, etc.)
+
+LEGITIMATE EMAIL DOMAINS (Kenyan companies):
+- Safaricom: @safaricom.co.ke
+- KPLC: @kplc.co.ke
+- Equity Bank: @equitybank.co.ke
+- M-Pesa: @safaricom.co.ke
+
+Sender email: $senderEmail
+Message content: $messageContent
+
+Check:
+1. Sender email domain (matches official domains exactly?)
+2. Message content (scam phrases, urgency, requests for info?)
+3. Grammar/spelling quality
+4. Generic vs personalized greeting
+5. Suspicious links or attachments mentioned
+
+Provide JSON response:
+{
+  "isScam": true/false,
+  "confidence": 0.0-1.0,
+  "indicators": ["specific indicators found"],
+  "company": "detected company or null",
+  "analysis": "detailed explanation",
+  "advice": "specific actionable advice"
+}
+
+IMPORTANT: If sender domain doesn't match official domains exactly, mark as SCAM. If message contains urgent requests or asks for personal info, mark as SCAM. Better safe than sorry.
+''';
+
+      final requestBody = {
+        'contents': [
+          {
+            'parts': [
+              {'text': prompt}
+            ]
+          }
+        ],
+        'generationConfig': {
+          'temperature': 0.1,
+          'topK': 32,
+          'topP': 1,
+          'maxOutputTokens': 1024,
+        }
+      };
+
+      final response = await http.post(
+        Uri.parse('$_geminiApiBaseUrl/gemini-2.0-flash-001:generateContent'),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? '';
+        return _parseLLMResponse(text, 'email');
+      } else {
+        throw Exception('LLM API error: ${response.statusCode}');
+      }
+    } catch (e) {
+      return _getFallbackResponse('email', error: e.toString());
+    }
+  }
+
   /// Analyze phone number for scam indicators
   Future<Map<String, dynamic>> analyzePhoneNumber({
     required String phoneNumber,
@@ -171,27 +300,43 @@ Be thorough and identify any red flags. If legitimate, state the company it belo
       final apiKey = ApiConfig.googleApiKey!;
 
       final prompt = '''
-Analyze this phone number and determine if it's associated with scams or legitimate businesses. Check for:
-1. Phone number format and country code
-2. Known scam phone numbers or patterns
-3. Whether it matches the claimed company
-4. Reported scam activity associated with this number
+You are a cybersecurity expert analyzing a phone number for SCAM indicators. Be AGGRESSIVE in detection.
+
+OFFICIAL PHONE NUMBERS (Kenyan companies):
+- Safaricom: 100, 234, 200
+- KPLC: 97771, 0703070707
+- Equity Bank: 0763 000 000
+- M-Pesa: 234, 100
+
+SCAM INDICATORS:
+- Number doesn't match official customer care
+- Unknown/private/withheld numbers
+- Numbers asking for PIN/password
+- Numbers claiming to be from companies but not official
+- Premium rate numbers (starting with 700, 800, 900)
+- International numbers claiming to be local companies
 
 Phone number: $phoneNumber
 Claimed company: ${claimedCompany ?? 'Not specified'}
 Reason for contact: ${reason ?? 'Not specified'}
 
-Provide a JSON response with this structure:
+Check:
+1. Does it match official customer care numbers?
+2. Is it a known scam number pattern?
+3. Does the reason match typical scam tactics?
+4. Is the number format suspicious?
+
+Provide JSON response:
 {
   "isScam": true/false,
   "confidence": 0.0-1.0,
-  "indicators": ["list of detected indicators"],
+  "indicators": ["specific indicators"],
   "company": "actual company or null",
-  "analysis": "detailed analysis of the phone number",
-  "advice": "specific advice for the user"
+  "analysis": "detailed explanation",
+  "advice": "specific actionable advice"
 }
 
-Be thorough and identify any red flags. If legitimate, state the company it belongs to.
+IMPORTANT: If number doesn't match official numbers exactly, mark as SCAM. Better safe than sorry.
 ''';
 
       final requestBody = {
@@ -241,10 +386,19 @@ Be thorough and identify any red flags. If legitimate, state the company it belo
       if (jsonMatch != null) {
         final jsonStr = jsonMatch.group(0);
         final parsed = jsonDecode(jsonStr!);
+        
+        // Be more aggressive: if confidence > 0.3 or has indicators, mark as scam
+        final rawIsScam = parsed['isScam'] ?? false;
+        final confidence = (parsed['confidence'] as num?)?.toDouble() ?? 0.5;
+        final indicators = List<String>.from(parsed['indicators'] ?? []);
+        
+        // If there are indicators or confidence is moderate, err on side of caution
+        final isScam = rawIsScam || (indicators.isNotEmpty && confidence > 0.3);
+        
         return {
-          'isScam': parsed['isScam'] ?? false,
-          'confidence': (parsed['confidence'] as num?)?.toDouble() ?? 0.5,
-          'indicators': List<String>.from(parsed['indicators'] ?? []),
+          'isScam': isScam,
+          'confidence': confidence,
+          'indicators': indicators,
           'company': parsed['company'],
           'analysis': parsed['analysis'] ?? text,
           'advice': parsed['advice'] ?? '',
@@ -252,11 +406,16 @@ Be thorough and identify any red flags. If legitimate, state the company it belo
         };
       }
 
-      // Fallback: parse from text
-      final isScam = text.toLowerCase().contains('scam') ||
-          text.toLowerCase().contains('fraud') ||
-          text.toLowerCase().contains('suspicious') ||
-          text.toLowerCase().contains('not legitimate');
+      // Fallback: parse from text - be aggressive in detection
+      final lowerText = text.toLowerCase();
+      final isScam = lowerText.contains('scam') ||
+          lowerText.contains('fraud') ||
+          lowerText.contains('suspicious') ||
+          lowerText.contains('not legitimate') ||
+          lowerText.contains('phishing') ||
+          lowerText.contains('fake') ||
+          lowerText.contains('warning') ||
+          (lowerText.contains('legitimate') && !lowerText.contains('appears legitimate'));
 
       return {
         'isScam': isScam,
